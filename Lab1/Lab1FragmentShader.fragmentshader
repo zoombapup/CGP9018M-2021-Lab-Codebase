@@ -1,0 +1,13 @@
+#version 330 core
+
+// Ouput data
+out vec3 color;
+// declare the "in" parameter passed from our vertex shader here (same name and type with "in" instead of "out")
+
+
+void main()
+{
+	color = vec3(1.0,0.0,0.0);
+	// once you have the vertex colour passed through, return that instead of the solid red colour above!
+
+}
