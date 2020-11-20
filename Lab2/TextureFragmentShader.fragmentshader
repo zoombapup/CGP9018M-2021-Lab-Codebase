@@ -13,5 +13,23 @@ uniform vec3 LightDirectionWorldSpace;
 uniform vec3 LightPositionWorldSpace;
 
 void main(){
-	color = vec3(0.4,0.4,0.4);
+	// normal is in world space
+	vec3 norm = normalize(Normal);
+	vec3 lightvec = normalize(LightPositionWorldSpace - FragPosWorldSpace);
+
+	// --- USE EITHER LIGHT DIRECTION VECTOR UNIFORM, OR CALCULATE IT PER FRAGMENT
+	// basically N.L (dot product of FACE normal and direction from fragment to the light)
+	// here we calculate diffuse as N.L with N as face normal and L as the light direction we passed in via Uniform
+	float diffuse = max(dot(norm,LightDirectionWorldSpace),0.3);
+
+	// basically N.L (dot product of FRAGMENT normal and the direction from fragment to the light)
+	// here we calculate diffuseas N.L with N as face normal and L as the light direction calculated
+	// by taking the fragment position and making a vector to the light position and normalizing it
+	//float diffuse = max(dot(norm,lightvec),0.5);
+
+	// output colour of the texture at UV then multiply by the diffuse light intensity
+	color = texture( myTextureSampler, UV ).rgb * diffuse;
+	// debug, uncomment the line below to just see diffuse intensity
+	//color = vec3(diffuse,diffuse,diffuse);
+	
 }

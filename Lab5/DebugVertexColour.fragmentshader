@@ -7,25 +7,29 @@ in vec3 Position_worldspace;
 in vec3 Normal_cameraspace;
 in vec3 EyeDirection_cameraspace;
 in vec3 LightDirection_cameraspace;
+in vec3 VertColour;
 
 // constants for whole mesh
 uniform sampler2D texture_diffuse1;
-uniform vec4 light;	// light position (xyz) and light power (w)
-uniform vec3 lightColour;
+uniform sampler2D texture_ao1;
+uniform vec4 lights[4];	// array of light position + power values for 4 "point" lights
 uniform float ambientlevel;
 
 void main()
 {    
-	// Lighting properties
-	float LightPower = light.w;
-
+    //FragColor = texture(texture_diffuse1, UV);
+	// Light emission properties
+	// You probably want to put them as uniforms
+	vec3 LightColor = vec3(1,1,1);
+	float LightPower = lights[0].w;
+	
 	// Material properties
-	vec3 MaterialDiffuseColor = texture( texture_diffuse1, UV ).rgb;
+	vec3 MaterialDiffuseColor = VertColour;
 	vec3 MaterialAmbientColor = vec3(ambientlevel,ambientlevel,ambientlevel) * MaterialDiffuseColor;
 	vec3 MaterialSpecularColor = vec3(0.5,0.5,0.5);
 
 	// Distance to the light
-	float distance = length( light.xyz - Position_worldspace );
+	float distance = length( lights[0].xyz - Position_worldspace );
 
 	// Normal of the computed fragment, in camera space
 	vec3 n = normalize( Normal_cameraspace );
@@ -52,8 +56,8 @@ void main()
 		// Ambient : simulates indirect lighting
 		MaterialAmbientColor +
 		// Diffuse : "color" of the object
-		MaterialDiffuseColor * lightColour * LightPower * cosTheta / (distance*distance) +
+		MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance) +
 		// Specular : reflective highlight, like a mirror
-		MaterialSpecularColor * lightColour * LightPower * pow(cosAlpha,15) / (distance*distance);
+		MaterialSpecularColor * LightColor * LightPower * pow(cosAlpha,15) / (distance*distance);
 
 }

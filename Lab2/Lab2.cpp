@@ -19,6 +19,8 @@ using namespace glm;
 
 // we're using shaders so need this for the "LoadShaders" function
 #include <common/shader.hpp>
+// technically we don't need this as we're using SOIL instead
+#include <common/texture.hpp>
 
 // soil2 image loading library.. so we can use JPG/TGA instead of the horrible BMP!
 #include "SOIL2.h"
@@ -27,6 +29,8 @@ using namespace glm;
 void RotateCube(glm::mat4 & ModelMat, float timedelta)
 {
 	// TODO actually do the rotation.. note the ModelMat is passed by ref so you can change it without returning.. is that a bad idea?
+	float rotatespeed = 1.0f;
+	ModelMat = rotate(ModelMat, rotatespeed * timedelta, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 // function to calculate vertex normals by taking three vertices of triangle and using two edges to get the normal via cross product
@@ -147,7 +151,7 @@ int main(void)
    // Load the texture here
 	GLuint Texture = SOIL_load_OGL_texture("..//3dcontent//textures//texture_diffuse1.jpg", SOIL_LOAD_RGB,SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB);
 
-	// Get a handle for our texture sampler uniform 
+	// Get a handle for our texture sampler uniform uniform
 	GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
 	// get a handle for the light position uniform
 	GLuint LightPosID = glGetUniformLocation(programID, "LightPositionWorldSpace");
@@ -305,7 +309,6 @@ int main(void)
 
 	// counter for elapsed time.. calculate the time delta each update and increase this value!
 	float elapsed = 0.0f;
-	float deltaTime = 0.0f;	// temp, you want to calculate this inside the Do..While loop!
 	// our light position (might be useful to animate this to view your lighting?)
 	glm::vec3 LightPos(4.0f, 3.0f, 3.0f);
 	glm::vec3 LightDir(0.0f, -1.0f, 0.0f);
@@ -334,11 +337,11 @@ int main(void)
 		glUniform3f(LightPosID, LightPos.x, LightPos.y, LightPos.z);
 
 		// Bind our texture in Texture Unit 0 (glActiveTexture)
-
+		glActiveTexture(GL_TEXTURE0);
 		// Bind the texture (glBindTexture) using the handle of our texture loaded via SOIL
-
+		glBindTexture(GL_TEXTURE_2D, Texture);
 		// Set our sampler uniform in the shader to use Texture Unit 0 (glUniform1i)
-
+		glUniform1i(TextureID, 0);
 
 		// remember that OpenGL is stateful, so if we call glDrawArrays now, it will try and draw with the currently bound VAO data
 		// which means it will use our vertex array + vertex buffers + vertex attributes
@@ -353,8 +356,11 @@ int main(void)
 		// calculate time delta and rotate cube by that delta here... this will then be drawn in the next update
 		// note: we could do this at the start of the do loop.. works either way as long as the Model matrix is changed
 		// every update and then written into the MVP matrix (which then gets set for our MVP uniform)
-
-		// call the function to get the new rotation (by filling in the Model matrix
+		currentTime = glfwGetTime();
+		float deltaTime = float(currentTime - lastTime);
+		elapsed += deltaTime;
+		lastTime = currentTime;
+		// call the function to get the new rotation
 		RotateCube(Model, deltaTime);
 		// recompute the MVP matrix so the object rotates
 		MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around

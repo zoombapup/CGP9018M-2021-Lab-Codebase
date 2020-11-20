@@ -2,19 +2,17 @@
 
 // Input vertex data
 layout(location = 0) in vec3 vertexPosition_modelspace;
-// You will need to declare another value here for the vertex colour!
+layout(location = 1) in vec4 vertexColour;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
 
-// declare an "out" value here for the vertex colour
-
+out vec4 vertexCol;
 
 void main()
 {
 	// Output position of the vertex, in clip space : MVP * position
 	gl_Position =  MVP * vec4(vertexPosition_modelspace,1);
-	// pass through the vertex colour here
-	
+	vertexCol = vertexColour;
 }
 

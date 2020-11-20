@@ -23,11 +23,9 @@ void main()
 	float LightPower = light.w;
 	
 	// Material properties
-	// TODO: you will want to multiply in the ambient occlusion texture here..
-	vec3 MaterialDiffuseColor = texture( texture_diffuse1, UV ).rgb;
+	vec3 MaterialDiffuseColor = texture( texture_diffuse1, UV ).rgb * texture( texture_ao1, UV).rgb;
 	vec3 MaterialAmbientColor = vec3(ambientlevel,ambientlevel,ambientlevel) * MaterialDiffuseColor;
-	// TODO: get the specular colour map here
-	vec3 MaterialSpecularColor = vec3(0.5,0.5,0.5);
+	vec3 MaterialSpecularColor = texture( texture_specular1, UV).rgb;
 
 	// Distance to the light
 	float distance = length( light.xyz - Position_worldspace );
@@ -43,12 +41,22 @@ void main()
 	//  - light is behind the triangle -> 0
 	float cosTheta = clamp( dot( n,l ), 0,1 );
 	
-	// compute specular term here..
+	// Eye vector (towards the camera)
+	vec3 E = normalize(EyeDirection_cameraspace);
+	// Direction in which the triangle reflects the light
+	vec3 R = reflect(-l,n);
+	// Cosine of the angle between the Eye vector and the Reflect vector,
+	// clamped to 0
+	//  - Looking into the reflection -> 1
+	//  - Looking elsewhere -> < 1
+	float cosAlpha = clamp( dot( E,R ), 0,1 );
 	
 	FragColor = 
 		// Ambient : simulates indirect lighting
 		MaterialAmbientColor +
 		// Diffuse : "color" of the object
-		MaterialDiffuseColor * lightColour * LightPower * cosTheta / (distance*distance);
-		// TODO: Add specular term here!
+		MaterialDiffuseColor * lightColour * LightPower * cosTheta / (distance*distance) +
+		// Specular : reflective highlight, like a mirror
+		MaterialSpecularColor * lightColour * LightPower * pow(cosAlpha,15) / (distance*distance);
+
 }

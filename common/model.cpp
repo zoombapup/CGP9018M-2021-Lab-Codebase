@@ -420,10 +420,21 @@ Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene)
 		// diffuse (aka albedo)
 		std::vector<MeshTexture> diffuseMaps = loadMaterialTextures(material,aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-		// TODO: Add handling for all other types of textures that ASSIMP supports here!
-		// specular, height, normal, ambient etc...
-
-		// TODO: right now, the texture has to be in the same directory as the model to work.. maybe fix this requirement?
+		// emissive maps (i.e. object glow)
+		std::vector<MeshTexture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, "texture_emissive");
+		textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
+		// specular color or intensity??
+		std::vector<MeshTexture> specularMaps = loadMaterialTextures(material,aiTextureType_SPECULAR, "texture_specular");
+		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+		// use ambient to mean AO maps
+		std::vector<MeshTexture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
+		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
+		// normal maps!
+		std::vector<MeshTexture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+		// bump maps loaded as normals
+		std::vector<MeshTexture> bnormalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+		textures.insert(textures.end(), bnormalMaps.begin(), bnormalMaps.end());
 
 	}
 

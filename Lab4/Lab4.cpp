@@ -54,7 +54,7 @@ int main( void )
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1024, 768, "Lab4 - Phong with specular+ambient occlusion maps", NULL, NULL);
+	window = glfwCreateWindow( 1024, 768, "Lab4 Phong with ambient occlusion + Normal?", NULL, NULL);
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
@@ -105,7 +105,10 @@ int main( void )
 	// shader for mat (which has ambient occlusion texture in the ambient channel that is multiplied by diffuse colour texture)
 	// and specularity colour map
 	Shader StandardShaderWithAO("StandardShadingWithAOSpecmaps.vertexshader", "StandardShadingWithAOSpecmaps.fragmentshader");
+	Shader StandardShaderWithAOSpecNorm("StandardShadingWithAOSpecNormalmap.vertexshader", "StandardShadingWithAOSpecNormalmap.fragmentshader");
 	check_gl_error();
+
+
 
 	// shader for our standard models with 1 diffuse texture
 	Shader StandardShader("StandardShading.vertexshader", "StandardShading.fragmentshader");
@@ -186,13 +189,26 @@ int main( void )
 		// skybox always comes first, so other models can overwrite colour buffer
 		sky.Draw(View,Projection, skyboxShader);
 
-		// draw the "fancy" mat first, he's got AO!
-		StandardShaderWithAO.use();
-		StandardShaderWithAO.setFloat("ambientlevel", 0.2f);
-		StandardShaderWithAO.setVec3("lightColour", lightColour);
-		StandardShaderWithAO.setVec4("light", light);
-		matModel.Render(View, Projection, StandardShaderWithAO);
-	
+		if (!bShowNormalMap)
+		{
+			// draw the "fancy" mat first, he's got AO!
+			StandardShaderWithAO.use();
+			StandardShaderWithAO.setFloat("ambientlevel", 0.2f);
+			StandardShaderWithAO.setVec3("lightColour", lightColour);
+			StandardShaderWithAO.setVec4("light", light);
+			matModel.Render(View, Projection, StandardShaderWithAO);
+		}
+		else
+		{
+			// draw the "fancy" mat first, he's got AO!
+			StandardShaderWithAOSpecNorm.use();
+			StandardShaderWithAOSpecNorm.setFloat("ambientlevel", 0.2f);
+			StandardShaderWithAOSpecNorm.setVec3("lightColour", lightColour);
+			StandardShaderWithAOSpecNorm.setVec4("light", light);
+			matModel.Render(View, Projection, StandardShaderWithAOSpecNorm);
+		}
+
+		
 
 		// now bind and use our "Standard phong lighting shader for both "normal" mat and the base mesh
 		StandardShader.use();

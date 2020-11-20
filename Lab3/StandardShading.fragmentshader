@@ -6,8 +6,33 @@ in vec3 Normal;
 in vec3 FragmentPosition_WorldSpace;
 
 uniform sampler2D texture_diffuse1;
+uniform vec3 lightPosition;
+uniform vec3 lightColour;
+uniform float ambientIntensity;
+uniform vec3 cameraPosition;
+uniform float specularIntensity;
+uniform float specularPower;
 
 void main()
-{    
-    FragColor = texture(texture_diffuse1, UV);
+{   
+	vec3 norm = normalize(Normal); // normalize the Normal value passed form the vertex shader
+	vec3 lightDir = normalize(lightPosition - FragmentPosition_WorldSpace);
+
+	// ambient term is given by ambientIntensity, but we could multiply that with an ambient colour if we wanted
+	vec3 ambient = ambientIntensity * lightColour;
+
+	// diffuse term is N.L
+	float diffuseintensity = max(dot(norm,lightDir),0.0);
+	vec3 diffuse = diffuseintensity * texture(texture_diffuse1, UV).rgb;
+
+	// specular term
+	vec3 viewDir = normalize(cameraPosition - FragmentPosition_WorldSpace);
+	vec3 reflectDir = reflect(-lightDir, norm);
+	float spec = pow(max(dot(viewDir, reflectDir),0.0),specularPower);
+	// clamp specular intensity so it can't go negative
+	float specI = max(specularIntensity, 0.0);
+	vec3 specular = vec3(specI * spec);
+
+	vec3 colour = ambient + diffuse + specular;
+    FragColor = vec4(colour,1.0);
 }

@@ -10,6 +10,7 @@ GLFWwindow* window;
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 using namespace glm;
 
 // we're using shaders so need this for the "LoadShaders" function
@@ -60,10 +61,20 @@ int main( void )
 
 	// define your triangle data here.. don't be scared to experiment at this point
 	// triangle has 3 floats per vertex and 3 vertices = 9 floats!! note: winding order is important!!
+	static const GLfloat g_vertex_buffer_data[] = 
+	{
+		 1.0f,-1.0f, 0.0f,
+		-1.0f,-1.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f
+	};
 
-
-	// define vertex colour data here (same as above, but 4 floats per vertex (RGBA values in range 0..1)
-
+	static float g_colour_buffer_data[] =
+	{
+		// colour is one float each for RGBA
+		1.0f,0.0f,0.0f,1.0f,
+		0.0f,1.0f,0.0f,1.0f,
+		0.0f,0.0f,1.0f,1.0f
+	};
 
 	// now we need to let OpenGL know about the vertex data.. 
 	// the order is...
@@ -78,15 +89,49 @@ int main( void )
 	// 1) glDrawArrays and telling it to draw triangles! (check the opengl spec for parameters to all these calls)
 
 	// create a vertex array ID so we can bind our buffer to it
+	GLuint VertexArrayID;
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);	// sets this vertex array as the "current" one in OpenGL state machine
 	
 	// create a vertex buffer object id and fill it with our data
+	GLuint vertexbuffer;
+	glGenBuffers(1, &vertexbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
 	// 1st attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(
+		0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+
+	GLuint colourbuffer;
+	glGenBuffers(1, &colourbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, colourbuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_colour_buffer_data), g_colour_buffer_data, GL_STATIC_DRAW);
+
+	// 2nd attribute buffer : colours
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(
+		1,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+		4,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+
 
 	// Create and compile our GLSL program from the shaders
 	GLuint programID = LoadShaders("Lab1VertexShader.vertexshader", "Lab1FragmentShader.fragmentshader");
 
 	// Get a handle for our "MVP" (model * view * projection) uniform
+	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
@@ -96,26 +141,54 @@ int main( void )
 		glm::vec3(0, 0, 0), // and looks at the origin
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
-	// Model matrix : an identity matrix (model will be at the origin)
-	glm::mat4 Model = glm::mat4(1.0f);
-	// Our ModelViewProjection : multiplication of our 3 matrices
-	glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
+	float RotX = 0.0f;
+	float RotY = 0.0f;
+	float RotZ = 0.0f;
+	float RotSpeed = 1.0f;
+	
+	double currentTime = glfwGetTime();
+	double lastTime = currentTime;
 
 	do{
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		// calculate time delta and rotate triangle by that delta here... 
+		currentTime = glfwGetTime();
+		float deltaTime = float(currentTime - lastTime);
+		lastTime = currentTime;
+
+		// key handlers
+		if (glfwGetKey(window, GLFW_KEY_KP_8) == GLFW_PRESS) { RotY += deltaTime * RotSpeed; }
+		if (glfwGetKey(window, GLFW_KEY_KP_2) == GLFW_PRESS) { RotY -= deltaTime * RotSpeed; }
+		if (glfwGetKey(window, GLFW_KEY_KP_4) == GLFW_PRESS) { RotX += deltaTime * RotSpeed; }
+		if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS) { RotX -= deltaTime * RotSpeed; }
+		if (glfwGetKey(window, GLFW_KEY_KP_7) == GLFW_PRESS) { RotZ += deltaTime * RotSpeed; }
+		if (glfwGetKey(window, GLFW_KEY_KP_9) == GLFW_PRESS) { RotZ -= deltaTime * RotSpeed; }
+
 		// Draw your coloured triangle here! 
 		// Use our shader
+		glUseProgram(programID);
+
+		// Model matrix : changed over time by rotation euler angles
+		glm::mat4 Model = glm::mat4_cast(glm::quat(glm::vec3(RotX,RotY,RotZ)));
+		// Our ModelViewProjection : multiplication of our 3 matrices
+		glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
+
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
 		// Draw the triangle !
+		glDrawArrays(GL_TRIANGLES, 0, 3); // 1 triangle
 
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		
+
 
 	} // Check if the ESC key was pressed or the window was closed
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&

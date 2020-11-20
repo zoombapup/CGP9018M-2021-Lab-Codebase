@@ -17,34 +17,31 @@ uniform sampler2D texture_specular1; // this is being used as a mask texture so 
 uniform vec4 light;	// light position (xyz) and light power (w)
 uniform vec3 lightColour;
 uniform float ambientlevel;
-uniform float transitionpower;	// see app
-uniform float blendamount;		// see app
-uniform float masktexturescale;	// see app
-uniform bool showVertexColour;	// see app
+uniform float transitionpower;
+uniform float blendamount;
+uniform float masktexturescale;
+uniform bool showVertexColour;
 
 void main()
 {    
 	// Lighting properties
 	float LightPower = light.w;
 
-	// masktexturescale fed in from program so we can see the effect of scaling it
+	// col = vertex colour.. 
 	vec2 scaleduv = UV * masktexturescale;
-
-	// col = vertex colour.. RGBA as floats.. use the R channel to do some interesting blending here
+	vec3 masktex = texture(texture_specular1,scaleduv).rgb;
+	float clampcolour = clamp(col.r + (masktex.g * col.r),0.0,1.0);
+	float powervalue = pow(clampcolour, transitionpower);
+	float blendvalue = clamp(powervalue,0.0,1.0);
 
 	// Material properties
-	// try doing a mix(tex1,tex2,blendamount) here?
-	vec3 MaterialDiffuseColor = texture( texture_diffuse1, UV ).rgb;
-	// don't forget to try scaling the mask texture!
-
-	// show vertex colour toggles between textured view and greyscale view of R channel in vertex colours
+	vec3 MaterialDiffuseColor = mix(texture( texture_diffuse1, UV ).rgb,texture(texture_emissive1,UV).rgb,blendvalue);
 	if(showVertexColour == true)
 	{
 		MaterialDiffuseColor = vec3(col.r,col.r,col.r);
 	}
 		
 	vec3 MaterialAmbientColor = vec3(ambientlevel,ambientlevel,ambientlevel) * MaterialDiffuseColor;
-	// TODO: take this from a texture? beware though, in this shader specular texture is being abused for something else
 	vec3 MaterialSpecularColor = vec3(0.5,0.5,0.5);
 
 	// Distance to the light
@@ -61,12 +58,22 @@ void main()
 	//  - light is behind the triangle -> 0
 	float cosTheta = clamp( dot( n,l ), 0,1 );
 	
+	// Eye vector (towards the camera)
+	vec3 E = normalize(EyeDirection_cameraspace);
+	// Direction in which the triangle reflects the light
+	vec3 R = reflect(-l,n);
+	// Cosine of the angle between the Eye vector and the Reflect vector,
+	// clamped to 0
+	//  - Looking into the reflection -> 1
+	//  - Looking elsewhere -> < 1
+	float cosAlpha = clamp( dot( E,R ), 0,1 );
+	
 	FragColor = 
 		// Ambient : simulates indirect lighting
 		MaterialAmbientColor +
 		// Diffuse : "color" of the object
-		MaterialDiffuseColor * lightColour * LightPower * cosTheta / (distance*distance);
-		// TODO: Add specular term back in here
-		
+		MaterialDiffuseColor * lightColour * LightPower * cosTheta / (distance*distance) +
+		// Specular : reflective highlight, like a mirror
+		MaterialSpecularColor * lightColour * LightPower * pow(cosAlpha,15) / (distance*distance);
 
 }
