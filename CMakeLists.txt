@@ -35,12 +35,14 @@ endif(INCLUDE_DISTRIB)
 
 
 include_directories(
-	external/glfw-3.1.2/include/
+	external/glfw-3.3.2/include/
 	external/glm-0.9.7.1/
 	external/glew-1.13.0/include/
 	external/assimp-4.1.0/include/
 	external/soil2/src/
 	build/external/assimp-4.1.0/include
+	external/imgui-1.79/
+	external/imgui-1.79/examples/
 	.
 )
 
@@ -333,6 +335,46 @@ add_custom_command(
 )
 
 ###################################### END STANDARD BLOCK FOR LAB7
+
+####################################### STANDARD BLOCK FOR A LAB PROGRAM IN THE .SLN FILE - REPLACE LAB<number> WITH YOUR OWN NUMBER!
+
+
+
+set (LABNAME Lab8)
+# Lab 8 Starting point for lab 8
+add_executable(${LABNAME} 
+	${LABNAME}/Lab8.cpp
+	common/shader.cpp
+	common/shader.hpp
+	external/imgui-1.79/imgui.h
+	external/imgui-1.79/imgui_internal.h
+	external/imgui-1.79/imgui.cpp
+	external/imgui-1.79/imconfig.h	
+	external/imgui-1.79/imgui_draw.cpp
+	external/imgui-1.79/imgui_widgets.cpp
+	external/imgui-1.79/imstb_rectpack.h
+	external/imgui-1.79/imstb_textedit.h
+	external/imgui-1.79/imstb_truetype.h
+	external/imgui-1.79/examples/imgui_impl_glfw.h
+	external/imgui-1.79/examples/imgui_impl_glfw.cpp
+	external/imgui-1.79/examples/imgui_impl_opengl3.h
+	external/imgui-1.79/examples/imgui_impl_opengl3.cpp
+	${LABNAME}/Lab1VertexShader.vertexshader
+	${LABNAME}/Lab1FragmentShader.fragmentshader
+)
+target_link_libraries(${LABNAME}
+	${ALL_LIBS}
+)
+# Visual studio working directories (tells Visual Studio where you can debug from etc)
+create_target_launcher(${LABNAME} WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${LABNAME}/")
+
+# Visual studio custom build command (copies .exe (debug or release) file from build dir back into the folder where the source is)
+add_custom_command(
+   TARGET ${LABNAME} POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${LABNAME}${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/${LABNAME}/"
+)
+
+###################################### END STANDARD BLOCK FOR LAB 8 - IMGUI Version of Lab 1
 
 
 SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
